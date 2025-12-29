@@ -47,15 +47,41 @@ function updateUserData(form) {
   var sheet = ss.getSheets()[0];
   var row = form.row;
 
+  // 1. บันทึกข้อมูลส่วนตัวและโปรแกรม
   sheet.getRange(row, 2).setValue(form.prefix);  
   sheet.getRange(row, 3).setValue(form.name);    
   sheet.getRange(row, 4).setValue(form.surname); 
-  sheet.getRange(row, 5).setValue(form.dob);     // บันทึกวันที่เป็น Text (dd/MM/yyyy)
+  sheet.getRange(row, 5).setValue(form.dob);     
   sheet.getRange(row, 6).setValue(form.age);     
   sheet.getRange(row, 7).setValue(form.program); 
 
+  // 2. บันทึก Status (Y/N) ลงคอลัมน์ H (8) <-- ส่วนที่คุณขอเพิ่ม
+  // ถ้าโปรแกรมมากกว่า 0 เป็น Y, ถ้าเป็น 0 เป็น N
+  var textStatus = form.program > 0 ? 'Y' : 'N';
+  sheet.getRange(row, 8).setValue(textStatus);
+
+  // 3. บันทึกเวลา (Timestamp) ลงคอลัมน์ I (9)
+  var timestamp = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+  sheet.getRange(row, 9).setValue(timestamp);
+
+  // 4. แจ้งเตือน Telegram (ถ้ามี)
+  try {
+    var programText = (form.program == "0") ? "ไม่ประสงค์เข้ารับการตรวจ" : "โปรแกรมที่ " + form.program;
+    var message = "🔔 *มีการบันทึกข้อมูลตรวจสุขภาพ*\n" +
+                  "🆔 เลขบัตร: " + form.id + "\n" +
+                  "👤 ชื่อ-สกุล: " + form.prefix + form.name + " " + form.surname + "\n" +
+                  "🏥 เลือก: " + programText + "\n" +
+                  "📊 สถานะ: " + textStatus + "\n" + 
+                  "⏰ เวลา: " + timestamp;
+
+    sendMessageToTelegram(message); 
+  } catch (e) {
+    Logger.log("Telegram Error: " + e.toString());
+  }
+
   return "✅ บันทึกข้อมูลเรียบร้อยแล้ว!";
 }
+
 
 // 4. ฟังก์ชันดึงรายละเอียดโปรแกรมตรวจ (Sheet 2)
 function getProgramDetails() {
@@ -94,4 +120,26 @@ function getProgramDetails() {
   }
   
   return programs;
+}
+
+function sendMessageToTelegram(text) {
+  // 1. ใส่ Token ที่ได้จาก BotFather ตรงนี้
+  var token = "ใส่_TOKEN_ของคุณตรงนี้"; 
+  var chatId = "ใส่_CHAT_ID_ตรงนี้"; 
+
+  var url = "https://api.telegram.org/bot" + token + "/sendMessage";
+  
+  var payload = {
+    "chat_id": chatId,
+    "text": text,
+    "parse_mode": "Markdown" // จัดรูปแบบตัวหนาได้
+  };
+
+  var options = {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": JSON.stringify(payload)
+  };
+
+  UrlFetchApp.fetch(url, options);
 }
