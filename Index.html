@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base target="_top">
+  <title>ระบบตรวจสุขภาพประจำปี</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #e0f7fa 0%, #e8eaf6 100%);
+      font-family: 'Prompt', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .card-custom {
+      background: #ffffff;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      overflow: hidden;
+    }
+
+    .card-header-custom {
+      background: linear-gradient(60deg, #42a5f5, #5c6bc0);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .form-floating > label { padding-left: 20px; }
+    .form-control, .form-select {
+      border-radius: 12px;
+      border: 1px solid #dee2e6;
+      padding-left: 20px;
+    }
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 0 4px rgba(66, 165, 245, 0.15);
+      border-color: #42a5f5;
+    }
+
+    .btn-custom {
+      border-radius: 50px;
+      padding: 12px 30px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary-gradient {
+      background: linear-gradient(60deg, #42a5f5, #5c6bc0);
+      border: none;
+      color: white;
+    }
+    .btn-primary-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(92, 107, 192, 0.4);
+      color: white;
+    }
+
+    /* กล่องรายละเอียดโปรแกรม */
+    .program-details-box {
+      background-color: #fff;
+      border: 1px solid #e3f2fd;
+      border-radius: 12px;
+      margin-top: 15px;
+      overflow: hidden;
+      display: none; /* ซ่อนไว้ก่อน */
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      animation: fadeIn 0.4s ease;
+    }
+    
+    .program-price-header {
+      background: #e3f2fd;
+      color: #1565c0;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      border-bottom: 1px solid #bbdefb;
+    }
+    
+    .program-list {
+      padding: 15px 20px;
+      font-size: 0.95rem;
+      color: #455a64;
+      background-color: #fafafa;
+    }
+
+    .program-list ul {
+      margin-bottom: 0;
+      padding-left: 25px;
+    }
+    
+    .program-list li { margin-bottom: 5px; }
+
+    .price-tag {
+      font-size: 1.2rem;
+      color: #d32f2f;
+      background: #fff;
+      padding: 2px 10px;
+      border-radius: 5px;
+      border: 1px solid #ffcdd2;
+    }
+
+    .hidden { display: none !important; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card card-custom">
+    <div class="card-header-custom">
+      <i class="fa-solid fa-user-doctor fa-3x mb-2"></i>
+      <h3 class="mb-0 fw-bold">ระบบตรวจสุขภาพ</h3>
+      <small style="opacity: 0.9;">ตรวจสอบสิทธิ์และเลือกโปรแกรม</small>
+    </div>
+
+    <div class="card-body p-4">
+      
+      <div id="loginSection">
+        <p class="text-center text-muted mb-4">กรอกเลขบัตรประชาชนเพื่อเข้าสู่ระบบ</p>
+        
+        <div class="form-floating mb-4">
+          <input type="text" id="idInput" class="form-control" placeholder="เลขบัตรประชาชน">
+          <label><i class="fa-regular fa-id-card me-2"></i>เลขประจำตัวประชาชน</label>
+        </div>
+        
+        <button onclick="checkLogin()" class="btn btn-primary-gradient btn-custom w-100 btn-lg">
+          เข้าสู่ระบบ
+        </button>
+      </div>
+
+      <div id="mainSection" class="hidden">
+        <form id="dataForm" onsubmit="event.preventDefault(); saveData();">
+          
+          <div class="d-flex align-items-center mb-3 text-primary">
+            <i class="fa-solid fa-circle-user fa-lg me-2"></i>
+            <h5 class="mb-0 fw-bold">ข้อมูลส่วนตัว</h5>
+          </div>
+          
+          <div class="row g-2 mb-2">
+            <div class="col-4">
+              <div class="form-floating">
+                <select id="prefix" class="form-select" required>
+                  <option value="นาย">นาย</option>
+                  <option value="นาง">นาง</option>
+                  <option value="นางสาว">นางสาว</option>
+                </select>
+                <label>คำนำหน้า</label>
+              </div>
+            </div>
+            <div class="col-8">
+              <div class="form-floating">
+                <input type="text" id="fname" class="form-control" placeholder="ชื่อ" required>
+                <label>ชื่อ</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-floating mb-2">
+            <input type="text" id="lname" class="form-control" placeholder="นามสกุล" required>
+            <label>นามสกุล</label>
+          </div>
+
+          <div class="row g-2 mb-4">
+            <div class="col-8">
+              <div class="form-floating">
+                <input type="text" id="dob" class="form-control" placeholder="เช่น 10/11/1979" required>
+                <label>วันเกิด ค.ศ.(วว/ดด/ปปปป)</label>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="form-floating">
+                <input type="number" id="age" class="form-control" placeholder="อายุ" required>
+                <label>อายุ</label>
+              </div>
+            </div>
+          </div>
+
+          <hr class="text-muted">
+
+         <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-bold text-primary mb-0">
+                <i class="fa-solid fa-clipboard-list me-2"></i>เลือกโปรแกรมตรวจสุขภาพ
+              </label>
+              
+              <button type="button" onclick="showProgramImage()" class="btn btn-outline-info btn-sm rounded-pill shadow-sm" style="font-size: 0.85rem;">
+                <i class="fa-regular fa-eye me-1"></i> ดูรายละเอียด
+              </button>
+            </div>
+
+            <select id="programSelect" class="form-select form-select-lg border-primary" required>
+              <option value="">-- กรุณาเลือกรายการ --</option>
+              </select>
+
+            <div id="programInfo" class="program-details-box">
+              <div class="program-price-header">
+                <span><i class="fa-solid fa-coins me-2"></i>ราคาส่วนเกิน (จ่ายเพิ่ม)</span>
+                <span id="displayPrice" class="price-tag">0 บาท</span>
+              </div>
+              <div class="program-list">
+                <strong class="d-block mb-2 text-dark"><i class="fa-solid fa-microscope me-2"></i>รายการตรวจ:</strong>
+                <ul id="displayItems" class="text-secondary">
+                  </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary-gradient btn-custom btn-lg shadow-sm">
+              <i class="fa-solid fa-save me-2"></i>บันทึกข้อมูล
+            </button>
+            <button type="button" onclick="confirmLogout()" class="btn btn-light btn-custom text-muted">
+              ออกจากระบบ
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="hidden" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.85);justify-content:center;align-items:center;z-index:9999;flex-direction:column;">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+    <p class="mt-3 text-primary fw-bold">กำลังโหลดข้อมูล...</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    var currentRow = 0;
+    var allProgramsData = {}; 
+
+    window.onload = function() {
+      google.script.run.withSuccessHandler(function(data) {
+        allProgramsData = data;
+        console.log("Program data loaded");
+      }).getProgramDetails();
+    };
+
+    // --- ฟังก์ชันใหม่: สร้างตัวเลือกโปรแกรมตามอายุ ---
+    function updateProgramOptions(age) {
+      var select = document.getElementById('programSelect');
+      var userAge = parseInt(age); // แปลงอายุเป็นตัวเลขให้ชัวร์
+      
+      // 1. ล้างตัวเลือกเก่าทิ้งทั้งหมด
+      select.innerHTML = '<option value="">-- กรุณาเลือกรายการ --</option>';
+      
+      var allowedPrograms = [];
+
+      // 2. กำหนดเงื่อนไขตามอายุ
+      if (userAge < 35) {
+        // อายุน้อยกว่า 35: เลือกได้แค่ 1, 2
+        allowedPrograms = [1, 2];
+      } else {
+        // อายุ 35 ขึ้นไป: เลือกได้ 3 - 8
+        allowedPrograms = [3, 4, 5, 6, 7, 8];
+      }
+
+      // 3. สร้างตัวเลือกใหม่ใส่เข้าไป
+      allowedPrograms.forEach(function(num) {
+        var option = document.createElement("option");
+        option.value = num;
+        option.text = "โปรแกรมที่ " + num;
+        select.appendChild(option);
+      });
+    }
+    // ------------------------------------------------
+
+    function checkLogin() {
+      var id = document.getElementById('idInput').value.trim();
+      
+      if(!id) {
+        return Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณากรอกเลขบัตรประชาชน', confirmButtonColor: '#5c6bc0' });
+      }
+
+      toggleLoading(true);
+
+      google.script.run.withSuccessHandler(function(result) {
+        toggleLoading(false);
+        if (result.found) {
+          // Toast Welcome
+          const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 3000, iconColor: 'white',
+            customClass: { popup: 'colored-toast' }, didOpen: (toast) => { toast.addEventListener('mouseenter', Swal.stopTimer); toast.addEventListener('mouseleave', Swal.resumeTimer); }
+          });
+
+          document.getElementById('loginSection').classList.add('hidden');
+          document.getElementById('mainSection').classList.remove('hidden');
+          
+          currentRow = result.row;
+          document.getElementById('prefix').value = result.prefix;
+          document.getElementById('fname').value = result.name;
+          document.getElementById('lname').value = result.surname;
+          document.getElementById('dob').value = result.dob;
+          
+          // แสดงอายุ
+          var age = result.age;
+          document.getElementById('age').value = age;
+          
+          // --- เรียกใช้ฟังก์ชันกรองตัวเลือกตามอายุ ---
+          updateProgramOptions(age);
+          // ---------------------------------------
+          
+          var progSelect = document.getElementById('programSelect');
+          // เลือกค่าเดิมที่มีอยู่ (ถ้าค่าเดิมไม่อยู่ในเงื่อนไขอายุ มันจะว่างไว้ให้เลือกใหม่)
+          progSelect.value = result.program || "";
+
+          // สั่งให้โชว์รายละเอียด (ถ้ามีค่า)
+          progSelect.dispatchEvent(new Event('change'));
+
+        } else {
+          Swal.fire({ icon: 'error', title: 'ไม่พบข้อมูล', text: 'ไม่พบเลขบัตรนี้ในระบบ หรืออาจกรอกผิด', confirmButtonColor: '#d33' });
+        }
+      }).searchUser(id);
+    }
+
+    // ฟังก์ชัน Dropdown เปลี่ยน (เหมือนเดิม)
+    document.getElementById('programSelect').addEventListener('change', function() {
+      var selectedProg = this.value;
+      var infoBox = document.getElementById('programInfo');
+      
+      if (selectedProg && allProgramsData[selectedProg]) {
+        var itemsHtml = "";
+        allProgramsData[selectedProg].items.forEach(function(item) {
+          itemsHtml += "<li>" + item + "</li>";
+        });
+        document.getElementById('displayItems').innerHTML = itemsHtml;
+        
+        var price = allProgramsData[selectedProg].price;
+        if (!isNaN(price)) price = Number(price).toLocaleString() + " บาท";
+        document.getElementById('displayPrice').innerText = price;
+        
+        infoBox.style.display = 'block';
+      } else {
+        infoBox.style.display = 'none';
+      }
+    });
+
+    // ฟังก์ชันบันทึก (เหมือนเดิม)
+    function saveData() {
+      var program = document.getElementById('programSelect').value;
+      
+      if(!program) {
+        return Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกโปรแกรม', text: 'กรุณาเลือกโปรแกรมตรวจสุขภาพก่อนบันทึก', confirmButtonColor: '#f39c12' });
+      }
+
+      Swal.fire({
+        title: 'ยืนยันการบันทึก?',
+        text: "ตรวจสอบความถูกต้องของข้อมูล",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#42a5f5',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ใช่, บันทึกเลย'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          toggleLoading(true);
+
+          var formData = {
+            row: currentRow,
+            prefix: document.getElementById('prefix').value,
+            name: document.getElementById('fname').value,
+            surname: document.getElementById('lname').value,
+            dob: document.getElementById('dob').value,
+            age: document.getElementById('age').value,
+            program: program
+          };
+
+          google.script.run.withSuccessHandler(function(msg) {
+            toggleLoading(false);
+            Swal.fire({ icon: 'success', title: 'เรียบร้อย!', text: msg, confirmButtonColor: '#28a745' });
+          }).updateUserData(formData);
+        }
+      })
+    }
+
+    // ฟังก์ชัน Logout (เหมือนเดิม)
+    function confirmLogout() {
+       Swal.fire({
+        title: 'ออกจากระบบ?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ใช่', cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#6c757d', cancelButtonColor: '#d33'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          document.getElementById("dataForm").reset();
+          document.getElementById("idInput").value = "";
+          document.getElementById('mainSection').classList.add('hidden');
+          document.getElementById('loginSection').classList.remove('hidden');
+          document.getElementById('programInfo').style.display = 'none';
+          currentRow = 0;
+        }
+      })
+    }
+
+    function toggleLoading(show) {
+      var loader = document.getElementById('loading');
+      if (show) {
+        loader.style.display = 'flex';
+        loader.classList.remove('hidden');
+      } else {
+        loader.style.display = 'none';
+        loader.classList.add('hidden');
+      }
+    }
+
+    // ฟังก์ชันแสดง Popup (ฉบับแก้ไข: ใช้ iframe เพื่อแก้ปัญหาภาพไม่ขึ้น)
+    function showProgramImage() {
+      Swal.fire({
+        title: 'รายละเอียดโปรแกรมตรวจสุขภาพ',
+        // ใช้ iframe ดึงหน้า Preview ของ Google มาแสดง (ชัวร์กว่าแบบรูปภาพ)
+        html: `
+          <div style="position: relative; padding-bottom: 75%; height: 0; overflow: hidden;">
+            <iframe 
+              src="https://drive.google.com/file/d/1avI8BrNKBq_3Yjif6WV_zwrafcUv6Nic/preview" 
+              style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" 
+              allow="autoplay">
+            </iframe>
+          </div>
+        `,
+        width: 900, // ปรับให้กว้างขึ้นเพื่อให้ดูง่าย
+        showCloseButton: true,
+        showConfirmButton: false,
+        // ลิงก์ดาวน์โหลด (ใช้ลิงก์ export=download เหมือนเดิม)
+        footer: '<a href="https://drive.google.com/uc?export=download&id=1avI8BrNKBq_3Yjif6WV_zwrafcUv6Nic" target="_blank" class="btn btn-sm btn-success text-white" style="text-decoration:none;"><i class="fa-solid fa-download"></i> ดาวน์โหลดรูปภาพเก็บไว้</a>'
+      });
+    }
+  </script>
+</body>
+</html>
